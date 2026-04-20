@@ -1,0 +1,1836 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Tuğra API Müşteri İhtiyaç Belirleme</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --orange: #E8751A;
+    --orange-light: #FFF3E8;
+    --orange-hover: #D06815;
+    --navy: #2C3E50;
+    --navy-light: #34495E;
+    --navy-dark: #1A252F;
+    --green: #27AE60;
+    --green-light: #E8F8EF;
+    --red: #E74C3C;
+    --red-light: #FDE8E8;
+    --blue-light: #EBF5FB;
+    --lgray: #F8F9FB;
+    --border: #E2E8F0;
+    --text: #2C3E50;
+    --muted: #8896A6;
+    --white: #FFFFFF;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--lgray);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* Header */
+  .app-header {
+    background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 50%, var(--navy-light) 100%);
+    color: white;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(44,62,80,0.3);
+  }
+
+  .header-logo {
+    width: 48px; height: 48px;
+    background: var(--orange);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 18px; color: white;
+    flex-shrink: 0;
+  }
+
+  .header-text h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+  .header-text p { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+
+  /* Progress */
+  .progress-bar {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    position: sticky;
+    top: 88px;
+    z-index: 99;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .progress-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .progress-step {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .progress-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 2px;
+    background: var(--border);
+    z-index: 1;
+  }
+
+  .progress-step:not(:last-child).completed::after { background: var(--green); }
+
+  .step-circle {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    background: var(--lgray);
+    color: var(--muted);
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+
+  .progress-step.active .step-circle {
+    background: var(--orange);
+    color: white;
+    border-color: var(--orange);
+    box-shadow: 0 0 0 4px rgba(232,117,26,0.15);
+  }
+
+  .progress-step.completed .step-circle {
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
+  }
+
+  .step-label { font-size: 12px; font-weight: 500; color: var(--muted); }
+  .progress-step.active .step-label { color: var(--navy); font-weight: 600; }
+  .progress-step.completed .step-label { color: var(--green); }
+
+  /* Container */
+  .container { max-width: 880px; margin: 24px auto; padding: 0 20px; }
+
+  /* Panels */
+  .step-panel { display: none; animation: slideIn 0.4s ease; }
+  .step-panel.active { display: block; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Cards */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    transition: box-shadow 0.2s;
+  }
+
+  .card:hover { box-shadow: var(--shadow-md); }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--lgray);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-title .icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .icon-orange { background: var(--orange-light); }
+  .icon-navy { background: var(--blue-light); }
+  .icon-green { background: var(--green-light); }
+
+  /* Forms */
+  .form-group { margin-bottom: 16px; }
+
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+
+  .form-group label .hint {
+    font-weight: 400;
+    color: var(--muted);
+    font-size: 11px;
+    margin-left: 4px;
+  }
+
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: var(--white);
+    color: var(--text);
+  }
+
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(232,117,26,0.1);
+  }
+
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* Checkbox & Radio Grids */
+  .checkbox-grid, .radio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+  }
+
+  .checkbox-item, .radio-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+    background: var(--white);
+    position: relative;
+  }
+
+  .checkbox-item:hover, .radio-item:hover {
+    border-color: var(--orange);
+    background: rgba(232,117,26,0.02);
+  }
+
+  .checkbox-item.selected {
+    border-color: var(--orange);
+    background: var(--orange-light);
+  }
+
+  .checkbox-item .check-box {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    margin-top: 1px;
+  }
+
+  .checkbox-item.selected .check-box {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: white;
+    font-size: 11px;
+  }
+
+  .checkbox-item.selected .check-box::after { content: '\2713'; }
+
+  .radio-item.selected {
+    border-color: var(--navy);
+    background: var(--blue-light);
+    font-weight: 500;
+  }
+
+  .radio-item .radio-dot {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    margin-top: 1px;
+  }
+
+  .radio-item.selected .radio-dot {
+    border-color: var(--navy);
+  }
+
+  .radio-item.selected .radio-dot::after {
+    content: '';
+    width: 8px; height: 8px;
+    background: var(--navy);
+    border-radius: 50%;
+  }
+
+  .item-content strong { display: block; font-size: 13px; color: var(--navy); }
+  .item-content .desc { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+
+  /* Architecture Cards */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin: 16px 0;
+  }
+
+  .arch-card {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .arch-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+  .arch-card.selected {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(232,117,26,0.15);
+  }
+
+  .arch-head {
+    padding: 14px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 12px;
+    color: white;
+    letter-spacing: 0.5px;
+  }
+
+  .arch-card:nth-child(1) .arch-head { background: linear-gradient(135deg, #3498DB, #2980B9); }
+  .arch-card:nth-child(2) .arch-head { background: linear-gradient(135deg, var(--orange), var(--orange-hover)); }
+  .arch-card:nth-child(3) .arch-head { background: linear-gradient(135deg, var(--navy), var(--navy-light)); }
+
+  .arch-body {
+    padding: 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+    min-height: 100px;
+  }
+
+  .arch-body strong { color: var(--navy); }
+
+  .arch-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--orange);
+    color: white;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .arch-card.selected .arch-badge { display: flex; }
+
+  /* Signature Profile Cards */
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin: 12px 0;
+  }
+
+  .profile-card {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+    position: relative;
+  }
+
+  .profile-card:hover { border-color: var(--orange); transform: translateY(-1px); }
+  .profile-card.selected { border-color: var(--orange); background: var(--orange-light); }
+
+  .profile-card .profile-icon { font-size: 28px; margin-bottom: 8px; }
+  .profile-card .profile-name { font-weight: 700; font-size: 15px; color: var(--navy); }
+  .profile-card .profile-desc { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+  .profile-card .profile-check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--orange);
+    color: white;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .profile-card.selected .profile-check { display: flex; }
+
+  /* Info Banners */
+  .banner {
+    padding: 14px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .banner .banner-icon { font-size: 18px; flex-shrink: 0; margin-top: -1px; }
+  .banner-orange { background: var(--orange-light); border-left: 4px solid var(--orange); }
+  .banner-blue { background: var(--blue-light); border-left: 4px solid var(--navy); }
+  .banner-green { background: var(--green-light); border-left: 4px solid var(--green); }
+  .banner-red { background: var(--red-light); border-left: 4px solid var(--red); }
+
+  /* HSM Detail */
+  .conditional-section {
+    display: none;
+    margin-top: 14px;
+    padding: 18px;
+    background: var(--orange-light);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(232,117,26,0.2);
+    animation: slideIn 0.3s ease;
+  }
+
+  .conditional-section.visible { display: block; }
+
+  /* Package Recommendation */
+  .pkg-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+  }
+
+  .pkg-card {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .pkg-card.recommended {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(232,117,26,0.12);
+    transform: scale(1.02);
+  }
+
+  .pkg-card .pkg-badge {
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--orange);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 14px;
+    border-radius: 0 0 8px 8px;
+    letter-spacing: 0.5px;
+    display: none;
+  }
+
+  .pkg-card.recommended .pkg-badge { display: block; }
+
+  .pkg-head {
+    padding: 20px 16px 14px;
+    text-align: center;
+  }
+
+  .pkg-head .pkg-name { font-size: 16px; font-weight: 800; color: var(--navy); }
+  .pkg-head .pkg-price { font-size: 28px; font-weight: 800; color: var(--orange); margin-top: 4px; }
+  .pkg-head .pkg-price span { font-size: 14px; font-weight: 500; color: var(--muted); }
+  .pkg-head .pkg-period { font-size: 11px; color: var(--muted); }
+
+  .pkg-features {
+    padding: 0 16px 20px;
+    list-style: none;
+  }
+
+  .pkg-features li {
+    font-size: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--lgray);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .pkg-features li:last-child { border: none; }
+  .pkg-features li .feat-icon { flex-shrink: 0; font-size: 12px; }
+  .feat-yes { color: var(--green); }
+  .feat-no { color: var(--muted); }
+
+  .pkg-card.dimmed { opacity: 0.45; }
+
+  /* Summary */
+  .summary-block { margin-bottom: 20px; }
+
+  .summary-block h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--lgray);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .summary-row {
+    display: flex;
+    padding: 8px 0;
+    font-size: 13px;
+    border-bottom: 1px solid var(--lgray);
+  }
+
+  .summary-row .s-label { font-weight: 500; color: var(--muted); min-width: 200px; flex-shrink: 0; }
+  .summary-row .s-value { color: var(--text); font-weight: 500; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .tag {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .tag-orange { background: var(--orange-light); color: var(--orange); }
+  .tag-navy { background: var(--blue-light); color: var(--navy); }
+  .tag-green { background: var(--green-light); color: var(--green); }
+
+  /* Price Summary Table */
+  .price-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+
+  .price-table th {
+    background: var(--navy);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .price-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .price-table tr:last-child td { border-bottom: none; }
+
+  .price-table .total-row {
+    background: var(--orange-light);
+    font-weight: 700;
+  }
+
+  .price-table .total-row td { color: var(--orange); font-size: 15px; }
+
+  /* Email Draft */
+  .email-draft {
+    background: var(--lgray);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+    font-size: 13px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    font-family: inherit;
+    position: relative;
+  }
+
+  .email-draft .email-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* Navigation */
+  .nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0 40px;
+  }
+
+  .btn {
+    padding: 12px 28px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--orange);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: var(--orange-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(232,117,26,0.35);
+  }
+
+  .btn-outline {
+    background: var(--white);
+    color: var(--navy);
+    border: 2px solid var(--navy);
+  }
+
+  .btn-outline:hover { background: var(--blue-light); }
+
+  .btn-navy {
+    background: var(--navy);
+    color: white;
+  }
+
+  .btn-navy:hover { background: var(--navy-dark); }
+
+  .btn-green {
+    background: var(--green);
+    color: white;
+  }
+
+  .btn-green:hover { background: #219A52; }
+
+  .btn-sm { padding: 8px 16px; font-size: 12px; }
+
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-group { display: flex; gap: 10px; }
+
+  /* Tooltip */
+  .tooltip-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--muted);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: help;
+    margin-left: 4px;
+    position: relative;
+  }
+
+  .tooltip-trigger:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--navy-dark);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 400;
+    white-space: nowrap;
+    max-width: 280px;
+    white-space: normal;
+    z-index: 10;
+    box-shadow: var(--shadow-lg);
+    line-height: 1.4;
+  }
+
+  /* Toast */
+  .toast {
+    display: none;
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--green);
+    color: white;
+    padding: 14px 28px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 6px 24px rgba(39,174,96,0.4);
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+  }
+
+  /* Collapsible */
+  .faq-item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+
+  .faq-q {
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--white);
+    transition: background 0.2s;
+  }
+
+  .faq-q:hover { background: var(--lgray); }
+  .faq-q .arrow { transition: transform 0.3s; font-size: 10px; color: var(--muted); }
+  .faq-item.open .faq-q .arrow { transform: rotate(180deg); }
+  .faq-item.open .faq-q { background: var(--lgray); }
+
+  .faq-a {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background: var(--white);
+  }
+
+  .faq-item.open .faq-a { max-height: 300px; }
+  .faq-a p { padding: 12px 16px; font-size: 13px; line-height: 1.6; color: #555; }
+
+  /* Print */
+  .print-only { display: none; }
+
+  @media print {
+    .app-header, .progress-bar, .nav-bar, .btn, .faq-item, .tooltip-trigger { display: none !important; }
+    .step-panel { display: block !important; page-break-inside: avoid; }
+    .card { box-shadow: none !important; border: 1px solid #ccc; }
+    body { background: white; }
+    .print-only { display: block; }
+    .container { max-width: 100%; }
+  }
+
+  /* Mobile */
+  @media (max-width: 680px) {
+    .form-row, .form-row-3 { grid-template-columns: 1fr; }
+    .arch-grid, .profile-grid, .pkg-grid { grid-template-columns: 1fr; }
+    .checkbox-grid, .radio-grid { grid-template-columns: 1fr; }
+    .progress-step .step-label { display: none; }
+    .progress-step:not(:last-child)::after { display: none; }
+    .summary-row { flex-direction: column; gap: 4px; }
+    .summary-row .s-label { min-width: auto; }
+  }
+
+  /* Tab component */
+  .tab-bar { display: flex; gap: 2px; margin-bottom: 16px; background: var(--lgray); border-radius: var(--radius-sm); padding: 3px; }
+  .tab-btn { flex: 1; padding: 10px; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 6px; transition: all 0.2s; color: var(--muted); background: transparent; border: none; font-family: inherit; }
+  .tab-btn.active { background: var(--white); color: var(--navy); box-shadow: var(--shadow-sm); }
+  .tab-content { display: none; animation: slideIn 0.3s ease; }
+  .tab-content.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="header-logo">eT</div>
+  <div class="header-text">
+    <h1>E-TU&#286;RA API Assessment</h1>
+    <p>M&#252;&#351;teri &#304;htiya&#231; Belirleme &amp; Paket &#214;neri Sistemi</p>
+  </div>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-inner" id="progressBar">
+    <div class="progress-step active" data-step="1">
+      <div class="step-circle">1</div>
+      <span class="step-label">M&#252;&#351;teri Bilgileri</span>
+    </div>
+    <div class="progress-step" data-step="2">
+      <div class="step-circle">2</div>
+      <span class="step-label">&#304;htiya&#231; Analizi</span>
+    </div>
+    <div class="progress-step" data-step="3">
+      <div class="step-circle">3</div>
+      <span class="step-label">Teknik Detaylar</span>
+    </div>
+    <div class="progress-step" data-step="4">
+      <div class="step-circle">4</div>
+      <span class="step-label">&#214;zet &amp; &#214;neri</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ==================== STEP 1: Müşteri Bilgileri ==================== -->
+<div class="step-panel active" id="step1">
+  <div class="card">
+    <div class="card-title">
+      <span class="icon icon-orange">&#128188;</span>
+      M&#252;&#351;teri Genel Bilgileri
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Firma Ad&#305; *</label><input type="text" id="firmaAdi" placeholder="Firma ad&#305;n&#305; girin"></div>
+      <div class="form-group"><label>Sekt&#246;r <span class="hint">(Finans, Sa&#287;l&#305;k, Kamu, Lojistik...)</span></label>
+        <select id="sektor">
+          <option value="">Se&#231;iniz</option>
+          <option value="Finans / Bankac&#305;l&#305;k">Finans / Bankac&#305;l&#305;k</option>
+          <option value="Sa&#287;l&#305;k">Sa&#287;l&#305;k</option>
+          <option value="Kamu">Kamu</option>
+          <option value="Lojistik / Ta&#351;&#305;mac&#305;l&#305;k">Lojistik / Ta&#351;&#305;mac&#305;l&#305;k</option>
+          <option value="Sigorta">Sigorta</option>
+          <option value="E-Ticaret">E-Ticaret</option>
+          <option value="&#220;retim / End&#252;stri">&#220;retim / End&#252;stri</option>
+          <option value="Hukuk">Hukuk</option>
+          <option value="E&#287;itim">E&#287;itim</option>
+          <option value="Yaz&#305;l&#305;m / Teknoloji">Yaz&#305;l&#305;m / Teknoloji</option>
+          <option value="Enerji">Enerji</option>
+          <option value="Di&#287;er">Di&#287;er</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Yetkili Ki&#351;i *</label><input type="text" id="yetkili" placeholder="Ad Soyad"></div>
+      <div class="form-group"><label>G&#246;revi / &#220;nvan&#305;</label><input type="text" id="gorevi" placeholder="&#214;rn: IT M&#252;d&#252;r&#252;, Yaz&#305;l&#305;m Geli&#351;tirici"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Telefon</label><input type="tel" id="telefon" placeholder="+90 5XX XXX XX XX"></div>
+      <div class="form-group"><label>E-Posta *</label><input type="email" id="eposta" placeholder="ornek@firma.com"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Firma Web Sitesi</label><input type="url" id="website" placeholder="https://www.firma.com"></div>
+      <div class="form-group">
+        <label>Firma B&#252;y&#252;kl&#252;&#287;&#252;</label>
+        <div class="radio-grid" data-name="firmaBuyukluk" style="grid-template-columns: repeat(4, 1fr)">
+          <div class="radio-item" data-value="1-50"><span class="radio-dot"></span><span>1-50</span></div>
+          <div class="radio-item" data-value="51-250"><span class="radio-dot"></span><span>51-250</span></div>
+          <div class="radio-item" data-value="251-1000"><span class="radio-dot"></span><span>251-1000</span></div>
+          <div class="radio-item" data-value="1000+"><span class="radio-dot"></span><span>1000+</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span class="icon icon-navy">&#128100;</span>
+      Sat&#305;&#351; Bilgileri
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Sat&#305;&#351; Temsilcisi</label><input type="text" id="temsilci" placeholder="Temsilci ad&#305;"></div>
+      <div class="form-group"><label>Tarih</label><input type="date" id="tarih"></div>
+    </div>
+    <div class="form-group">
+      <label>Mevcut e-&#304;mza / Sertifika Durumu
+        <span class="tooltip-trigger" data-tip="M&#252;&#351;teri daha &#246;nce e-imza &#231;&#246;z&#252;m&#252; kullanm&#305;&#351; m&#305;? Ba&#351;ka sa&#287;lay&#305;c&#305;dan ge&#231;i&#351; varsa rakip analizi yap&#305;labilir.">?</span>
+      </label>
+      <div class="radio-grid" data-name="mevcutDurum">
+        <div class="radio-item" data-value="Yok (&#304;lk defa)"><span class="radio-dot"></span><div class="item-content"><strong>&#304;lk Defa</strong><span class="desc">Hi&#231; e-imza kullanmam&#305;&#351;</span></div></div>
+        <div class="radio-item" data-value="Ba&#351;ka sa&#287;lay&#305;c&#305;"><span class="radio-dot"></span><div class="item-content"><strong>Ge&#231;i&#351;</strong><span class="desc">Ba&#351;ka sa&#287;lay&#305;c&#305;dan ge&#231;ecek</span></div></div>
+        <div class="radio-item" data-value="E-Tu&#287;ra mevcut"><span class="radio-dot"></span><div class="item-content"><strong>E-Tu&#287;ra Mevcut</strong><span class="desc">Zaten E-Tu&#287;ra m&#252;&#351;terisi</span></div></div>
+      </div>
+    </div>
+    <div class="form-group" id="mevcutSaglayiciGroup" style="display:none">
+      <label>Mevcut Sa&#287;lay&#305;c&#305; Ad&#305;</label>
+      <input type="text" id="mevcutSaglayici" placeholder="&#214;rn: Arksigner, E-G&#252;ven, EGA, T&#252;rkkep...">
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <div></div>
+    <button class="btn btn-primary" onclick="goStep(2)">&#304;htiya&#231; Analizi &#8594;</button>
+  </div>
+</div>
+
+<!-- ==================== STEP 2: İhtiyaç Analizi ==================== -->
+<div class="step-panel" id="step2">
+
+  <div class="card">
+    <div class="card-title">
+      <span class="icon icon-orange">&#128196;</span>
+      Dok&#252;man ve Kullan&#305;m Senaryosu
+    </div>
+    <div class="form-group">
+      <label>Hangi t&#252;r dok&#252;manlar&#305; imzalamay&#305; planl&#305;yorsunuz?
+        <span class="tooltip-trigger" data-tip="Dok&#252;man t&#252;r&#252; hangi imza profilinin gerekece&#287;ini belirler. PDF = PAdES, XML/JSON = XAdES, Genel dosya = CAdES">?</span>
+      </label>
+      <div class="checkbox-grid" id="dokumanTurleri">
+        <div class="checkbox-item" data-value="S&#246;zle&#351;meler"><span class="check-box"></span><div class="item-content"><strong>S&#246;zle&#351;meler</strong><span class="desc">PDF format&#305;nda</span></div></div>
+        <div class="checkbox-item" data-value="e-Faturalar"><span class="check-box"></span><div class="item-content"><strong>e-Faturalar</strong><span class="desc">XML/UBL format&#305;</span></div></div>
+        <div class="checkbox-item" data-value="e-Re&#231;ete"><span class="check-box"></span><div class="item-content"><strong>e-Re&#231;ete</strong><span class="desc">Sa&#287;l&#305;k sekt&#246;r&#252;</span></div></div>
+        <div class="checkbox-item" data-value="e-Defter"><span class="check-box"></span><div class="item-content"><strong>e-Defter</strong><span class="desc">Yasal zorunluluk</span></div></div>
+        <div class="checkbox-item" data-value="e-Bilet"><span class="check-box"></span><div class="item-content"><strong>e-Bilet</strong><span class="desc">Ta&#351;&#305;mac&#305;l&#305;k</span></div></div>
+        <div class="checkbox-item" data-value="Genel Dosyalar"><span class="check-box"></span><div class="item-content"><strong>Genel Dosyalar</strong><span class="desc">Herhangi bir dosya t&#252;r&#252;</span></div></div>
+      </div>
+      <div class="form-group" style="margin-top:10px"><input type="text" id="dokumanDiger" placeholder="Di&#287;er dok&#252;man t&#252;rleri (varsa)"></div>
+    </div>
+
+    <div class="form-group">
+      <label>&#304;mzal&#305; dok&#252;manlar nereye g&#246;nderilecek?
+        <span class="tooltip-trigger" data-tip="Hedef sistem, imza profilini ve uyumluluk gereksinimlerini etkiler. &#214;rn: GIB XML format&#305; isteyebilir.">?</span>
+      </label>
+      <div class="checkbox-grid" id="hedefSistemler">
+        <div class="checkbox-item" data-value="G&#304;B"><span class="check-box"></span><span>G&#304;B (Gelir &#304;daresi)</span></div>
+        <div class="checkbox-item" data-value="SGK"><span class="check-box"></span><span>SGK</span></div>
+        <div class="checkbox-item" data-value="&#304;&#231; Sistemler"><span class="check-box"></span><span>&#304;&#231; Sistemler</span></div>
+        <div class="checkbox-item" data-value="D&#305;&#351; Kurumlar"><span class="check-box"></span><span>D&#305;&#351; Kurumlar</span></div>
+        <div class="checkbox-item" data-value="M&#252;&#351;teriler"><span class="check-box"></span><span>M&#252;&#351;teriler</span></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Uygulaman&#305;n kullan&#305;m &#351;ekli nedir?
+        <span class="tooltip-trigger" data-tip="SaaS olarak satt&#305;klar&#305; bir uygulamaysa her m&#252;&#351;teri kurulumu ek uygulama lisans&#305; gerektirebilir.">?</span>
+      </label>
+      <div class="radio-grid" data-name="kullanimSekli">
+        <div class="radio-item" data-value="Kurum i&#231;i"><span class="radio-dot"></span><div class="item-content"><strong>Kurum &#304;&#231;i</strong><span class="desc">Kendi i&#231;lerinde kullanacaklar</span></div></div>
+        <div class="radio-item" data-value="SaaS Uygulama"><span class="radio-dot"></span><div class="item-content"><strong>SaaS Uygulama</strong><span class="desc">Kendi m&#252;&#351;terilerine sunuyorlar</span></div></div>
+        <div class="radio-item" data-value="Kurulum Bazl&#305;"><span class="radio-dot"></span><div class="item-content"><strong>Kurulum Bazl&#305;</strong><span class="desc">Her m&#252;&#351;teriye ayr&#305; kuruyor</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span class="icon icon-green">&#128273;</span>
+      &#304;mza Profilleri
+      <span class="tooltip-trigger" data-tip="Profil say&#305;s&#305; paketi belirler: 1 profil = BASIC (3.500&#8364;), 2 profil = PRO (6.500&#8364;), 3 profil = ENTERPRISE (9.500&#8364;)">?</span>
+    </div>
+    <div class="banner banner-orange">
+      <span class="banner-icon">&#9888;&#65039;</span>
+      <div><strong>Kritik:</strong> Se&#231;ilen imza profili say&#305;s&#305; do&#287;rudan paket &#246;nerisini belirler. 1 profil &#8594; BASIC, 2 profil &#8594; PRO, 3 profil &#8594; ENTERPRISE</div>
+    </div>
+    <div class="profile-grid" id="imzaProfilleri">
+      <div class="profile-card" data-value="PAdES" onclick="toggleProfile(this)">
+        <div class="profile-check">&#10003;</div>
+        <div class="profile-icon">&#128459;</div>
+        <div class="profile-name">PAdES</div>
+        <div class="profile-desc">PDF dok&#252;manlar&#305; i&#231;in.<br>PDF &#252;zerinde imza bas&#305;l&#305;r ve do&#287;rulan&#305;r.</div>
+      </div>
+      <div class="profile-card" data-value="XAdES" onclick="toggleProfile(this)">
+        <div class="profile-check">&#10003;</div>
+        <div class="profile-icon">&#128196;</div>
+        <div class="profile-name">XAdES</div>
+        <div class="profile-desc">XML / JSON dosyalar&#305; i&#231;in.<br>e-Fatura, e-Defter gibi yap&#305;sal veriler.</div>
+      </div>
+      <div class="profile-card" data-value="CAdES" onclick="toggleProfile(this)">
+        <div class="profile-check">&#10003;</div>
+        <div class="profile-icon">&#128230;</div>
+        <div class="profile-name">CAdES</div>
+        <div class="profile-desc">CMS tabanl&#305; imza.<br>Herhangi bir dosya t&#252;r&#252;n&#252; imzalar.</div>
+      </div>
+    </div>
+    <div id="profilSayisiInfo" class="banner banner-green" style="display:none">
+      <span class="banner-icon">&#128161;</span>
+      <div id="profilSayisiText"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span class="icon icon-navy">&#128272;</span>
+      &#304;mzalama Mimarisi
+    </div>
+    <div class="banner banner-blue">
+      <span class="banner-icon">&#128712;</span>
+      <div>Client Side + Server Side <strong>birlikte</strong> de kullan&#305;labilir. M&#252;&#351;terinin ihtiyac&#305;na g&#246;re birden fazla se&#231;im yap&#305;labilir.</div>
+    </div>
+
+    <div class="arch-grid" id="archDiagram">
+      <div class="arch-card" data-value="Client Side" onclick="toggleArch(this)">
+        <div class="arch-badge">&#10003;</div>
+        <div class="arch-head">CLIENT SIDE</div>
+        <div class="arch-body">
+          Sertifika <strong>kullan&#305;c&#305; taraf&#305;nda</strong> (USB token / ak&#305;ll&#305; kart).<br><br>
+          Her kullan&#305;c&#305; <strong>PIN girerek</strong> imzalar.<br><br>
+          <em style="color:var(--muted);font-size:11px">Bireysel kullan&#305;c&#305;lar, d&#252;&#351;&#252;k hacimli i&#351;lemler.</em>
+        </div>
+      </div>
+      <div class="arch-card" data-value="Server Side (On-Prem)" onclick="toggleArch(this)">
+        <div class="arch-badge">&#10003;</div>
+        <div class="arch-head">SERVER SIDE<br>(On-Prem)</div>
+        <div class="arch-body">
+          Server &#304;mzalama Sertifikas&#305; <strong>m&#252;&#351;teri sunucusuna</strong> tak&#305;l&#305;.<br><br>
+          PIN gerekmeden <strong>otomatik imzalama</strong>.<br><br>
+          <em style="color:var(--muted);font-size:11px">Orta hacimli i&#351;lemler.</em>
+        </div>
+      </div>
+      <div class="arch-card" data-value="Server Side (HSM)" onclick="toggleArch(this)">
+        <div class="arch-badge">&#10003;</div>
+        <div class="arch-head">SERVER SIDE<br>(HSM NES)</div>
+        <div class="arch-body">
+          <strong>HSM NES Sertifikas&#305;</strong> ile imzalama.<br><br>
+          &#8226; Cloud HSM (E-Tu&#287;ra) &#8594; 2.500 &#8364;/y&#305;l<br>
+          &#8226; Kendi HSM'i &#8594; Sadece sertifika bedeli<br><br>
+          <em style="color:var(--muted);font-size:11px">Y&#252;ksek hacimli, kurumsal i&#351;lemler.</em>
+        </div>
+      </div>
+    </div>
+
+    <div class="conditional-section" id="hsmDetail">
+      <div style="font-weight:700;font-size:14px;color:var(--navy);margin-bottom:12px">&#128737; HSM Detaylar&#305;</div>
+      <div class="form-group">
+        <label>HSM Cihaz&#305; Konumu</label>
+        <div class="radio-grid" data-name="hsmKonum">
+          <div class="radio-item" data-value="E-Tu&#287;ra (Cloud HSM)"><span class="radio-dot"></span><div class="item-content"><strong>E-Tu&#287;ra (Cloud HSM)</strong><span class="desc">Cloud HSM + HSM Sertifika bedeli</span></div></div>
+          <div class="radio-item" data-value="M&#252;&#351;teri Taraf&#305;nda"><span class="radio-dot"></span><div class="item-content"><strong>M&#252;&#351;teri Taraf&#305;nda</strong><span class="desc">Sadece HSM Sertifika bedeli</span></div></div>
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:12px">
+        <div class="form-group"><label>Cloud HSM Kullan&#305;m Bedeli (&#8364;/y&#305;l)</label><input type="number" id="hsmBedeli" placeholder="Bedeli giriniz"></div>
+        <div class="form-group"><label>HSM NES Sertifika Bedeli (&#8364;)</label><input type="number" id="hsmNesSertifikaBedeli" placeholder="Bedeli giriniz"></div>
+      </div>
+    </div>
+
+    <div class="form-row" style="margin-top:16px">
+      <div class="form-group"><label>Tahmini G&#252;nl&#252;k &#304;mzalama Adedi</label><input type="number" id="gunlukAdet" placeholder="&#214;rn: 500"></div>
+      <div class="form-group"><label>Ayl&#305;k &#304;mzalama Hacmi</label><input type="number" id="aylikHacim" placeholder="&#214;rn: 15000"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span class="icon icon-green">&#9201;</span>
+      Zaman Damgas&#305; &amp; Ek Bilgiler
+    </div>
+    <div class="form-group">
+      <label>Zaman damgas&#305; gerekiyor mu?
+        <span class="tooltip-trigger" data-tip="Zaman damgas&#305; gerekiyorsa imza profili BES yerine EST veya &#252;st&#252; olmal&#305;d&#305;r. Ayr&#305; fiyatland&#305;r&#305;l&#305;r (TL, KDV dahil).">?</span>
+      </label>
+      <div class="radio-grid" data-name="zamanDamgasi" style="grid-template-columns: 1fr 1fr 1fr">
+        <div class="radio-item" data-value="Evet"><span class="radio-dot"></span><span>Evet, gerekli</span></div>
+        <div class="radio-item" data-value="Hay&#305;r"><span class="radio-dot"></span><span>Hay&#305;r</span></div>
+        <div class="radio-item" data-value="Emin de&#287;il"><span class="radio-dot"></span><span>Emin de&#287;il</span></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Uyulmas&#305; gereken reg&#252;lasyonlar
+        <span class="tooltip-trigger" data-tip="BDDK (bankac&#305;l&#305;k), SGK (sa&#287;l&#305;k), T&#220;B&#304;TAK standartlar&#305; gibi reg&#252;lasyonlar paket se&#231;imini etkileyebilir.">?</span>
+      </label>
+      <div class="checkbox-grid" id="regulasyonlar">
+        <div class="checkbox-item" data-value="5070 Say&#305;l&#305; Kanun"><span class="check-box"></span><span>5070 Say&#305;l&#305; Kanun</span></div>
+        <div class="checkbox-item" data-value="KVKK"><span class="check-box"></span><span>KVKK</span></div>
+        <div class="checkbox-item" data-value="eIDAS"><span class="check-box"></span><span>eIDAS</span></div>
+        <div class="checkbox-item" data-value="BDDK"><span class="check-box"></span><span>BDDK</span></div>
+        <div class="checkbox-item" data-value="ISO 27001"><span class="check-box"></span><span>ISO 27001</span></div>
+        <div class="checkbox-item" data-value="Sekt&#246;rel"><span class="check-box"></span><span>Sekt&#246;rel D&#252;zenleme</span></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Entegrasyon i&#231;in belirli bir zaman &#231;izelgesi var m&#305;?</label>
+      <div class="radio-grid" data-name="zamanCizelgesi" style="grid-template-columns: repeat(4, 1fr)">
+        <div class="radio-item" data-value="Acil (1 ay)"><span class="radio-dot"></span><span>Acil (1 ay)</span></div>
+        <div class="radio-item" data-value="1-3 ay"><span class="radio-dot"></span><span>1-3 ay</span></div>
+        <div class="radio-item" data-value="3-6 ay"><span class="radio-dot"></span><span>3-6 ay</span></div>
+        <div class="radio-item" data-value="Belirsiz"><span class="radio-dot"></span><span>Belirsiz</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <button class="btn btn-outline" onclick="goStep(1)">&#8592; Geri</button>
+    <button class="btn btn-primary" onclick="goStep(3)">Teknik Detaylar &#8594;</button>
+  </div>
+</div>
+
+<!-- ==================== STEP 3: Teknik Detaylar ==================== -->
+<div class="step-panel" id="step3">
+
+  <div class="card">
+    <div class="card-title">
+      <span class="icon icon-navy">&#9881;</span>
+      Teknik Altyap&#305;
+    </div>
+    <div class="form-group">
+      <label>Kullan&#305;lan Programlama Dilleri
+        <span class="tooltip-trigger" data-tip="Entegrasyon dok&#252;man&#305; ve destek kapsam&#305;n&#305; belirler. REST API t&#252;m dillerde kullan&#305;labilir.">?</span>
+      </label>
+      <div class="checkbox-grid" id="progDiller">
+        <div class="checkbox-item" data-value="Java"><span class="check-box"></span><span>Java</span></div>
+        <div class="checkbox-item" data-value="C# / .NET"><span class="check-box"></span><span>C# / .NET</span></div>
+        <div class="checkbox-item" data-value="Python"><span class="check-box"></span><span>Python</span></div>
+        <div class="checkbox-item" data-value="PHP"><span class="check-box"></span><span>PHP</span></div>
+        <div class="checkbox-item" data-value="Node.js"><span class="check-box"></span><span>Node.js</span></div>
+        <div class="checkbox-item" data-value="Go / Di&#287;er"><span class="check-box"></span><span>Go / Di&#287;er</span></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Framework / Platform <span class="hint">(opsiyonel)</span></label>
+      <input type="text" id="framework" placeholder="&#214;rn: Spring, ASP.NET, Laravel, Django, React, Angular...">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>&#304;&#351;letim Sistemi</label>
+        <div class="checkbox-grid" id="isletimSistemi" style="grid-template-columns: 1fr 1fr">
+          <div class="checkbox-item" data-value="Linux"><span class="check-box"></span><span>Linux</span></div>
+          <div class="checkbox-item" data-value="Windows Server"><span class="check-box"></span><span>Windows Server</span></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Sunucu Ortam&#305;</label>
+        <div class="radio-grid" data-name="sunucuOrtam" style="grid-template-columns: 1fr 1fr">
+          <div class="radio-item" data-value="On-Premise"><span class="radio-dot"></span><span>On-Premise</span></div>
+          <div class="radio-item" data-value="Cloud"><span class="radio-dot"></span><span>Cloud</span></div>
+          <div class="radio-item" data-value="Hibrit"><span class="radio-dot"></span><span>Hibrit</span></div>
+          <div class="radio-item" data-value="VPS"><span class="radio-dot"></span><span>VPS</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group"><label>Mevcut ERP / CRM / DMS</label><input type="text" id="erpSistem" placeholder="&#214;rn: SAP, Oracle, Logo..."></div>
+      <div class="form-group"><label>Veritaban&#305;</label><input type="text" id="veritabani" placeholder="&#214;rn: PostgreSQL, MSSQL"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span class="icon icon-orange">&#128268;</span>
+      Entegrasyon Detaylar&#305;
+    </div>
+    <div class="form-group">
+      <label>Entegrasyon Yap&#305;lacak Uygulamalar</label>
+      <div class="checkbox-grid" id="entUygulamalar">
+        <div class="checkbox-item" data-value="Web Uygulamas&#305;"><span class="check-box"></span><span>Web Uygulamas&#305;</span></div>
+        <div class="checkbox-item" data-value="Mobil Uygulama"><span class="check-box"></span><span>Mobil Uygulama</span></div>
+        <div class="checkbox-item" data-value="Masa&#252;st&#252; Uygulama"><span class="check-box"></span><span>Masa&#252;st&#252; Uygulama</span></div>
+        <div class="checkbox-item" data-value="Arka Plan Servisi"><span class="check-box"></span><span>Arka Plan Servisi (Batch)</span></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>&#304;&#231; geli&#351;tirme ekibi mevcut mu?
+        <span class="tooltip-trigger" data-tip="Ek entegrasyon deste&#287;i adam/g&#252;n ihtiyac&#305;n&#305; belirler. (600 &#8364;/adam-g&#252;n)">?</span>
+      </label>
+      <div class="radio-grid" data-name="gelistirmeEkibi">
+        <div class="radio-item" data-value="Evet, var"><span class="radio-dot"></span><div class="item-content"><strong>Evet</strong><span class="desc">Gerekti&#287;inde destek alabilirler</span></div></div>
+        <div class="radio-item" data-value="K&#305;smi"><span class="radio-dot"></span><div class="item-content"><strong>K&#305;smi</strong><span class="desc">Destek almak istiyorlar</span></div></div>
+        <div class="radio-item" data-value="Yok"><span class="radio-dot"></span><div class="item-content"><strong>Yok</strong><span class="desc">Tam destek gerekecek</span></div></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Entegrasyon &#304;leti&#351;im Ki&#351;isi <span class="hint">(teknik)</span></label>
+      <div class="form-row">
+        <input type="text" id="teknikKisi" placeholder="Ad Soyad">
+        <input type="email" id="teknikEmail" placeholder="E-posta">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span class="icon icon-green">&#128196;</span>
+      Sertifika Gereksinimleri
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>&#304;htiya&#231; Duyulan Sertifika Adedi</label><input type="number" id="sertAdet" placeholder="Adet"></div>
+      <div class="form-group">
+        <label>Lisans S&#252;resi</label>
+        <select id="lisansSuresi">
+          <option value="">Se&#231;iniz</option>
+          <option value="1">1 Y&#305;l</option>
+          <option value="2">2 Y&#305;l</option>
+          <option value="3">3 Y&#305;l</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Sertifika T&#252;r&#252;</label>
+      <div class="checkbox-grid" id="sertTuru">
+        <div class="checkbox-item" data-value="NES"><span class="check-box"></span><div class="item-content"><strong>NES</strong><span class="desc">Nitelikli Elektronik Sertifika</span></div></div>
+        <div class="checkbox-item" data-value="Mali M&#252;h&#252;r"><span class="check-box"></span><div class="item-content"><strong>Mali M&#252;h&#252;r</strong><span class="desc">Kurumsal m&#252;h&#252;r</span></div></div>
+        <div class="checkbox-item" data-value="Server &#304;mzalama"><span class="check-box"></span><div class="item-content"><strong>Server &#304;mzalama</strong><span class="desc">Sunucu sertifikas&#305;</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span class="icon icon-navy">&#128221;</span>
+      Ek Notlar
+    </div>
+    <div class="form-group">
+      <textarea id="ekNotlar" rows="4" placeholder="G&#246;r&#252;&#351;me s&#305;ras&#305;ndaki notlar, m&#252;&#351;terinin &#246;zel talepleri..."></textarea>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <button class="btn btn-outline" onclick="goStep(2)">&#8592; Geri</button>
+    <button class="btn btn-primary" onclick="goStep(4)">&#214;zet &amp; &#214;neri &#8594;</button>
+  </div>
+</div>
+
+<!-- ==================== STEP 4: Özet & Öneri ==================== -->
+<div class="step-panel" id="step4">
+
+  <div class="card" id="recommendationCard">
+    <div class="card-title">
+      <span class="icon icon-orange">&#128640;</span>
+      Ak&#305;ll&#305; Paket &#214;nerisi
+    </div>
+    <div id="pkgRecommendation"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span class="icon icon-green">&#128176;</span>
+      Tahmini Fiyat &#214;zeti
+    </div>
+    <div id="priceSummary"></div>
+    <div class="banner banner-orange" style="margin-top:12px">
+      <span class="banner-icon">&#9888;&#65039;</span>
+      <div>Bu tahmini bir fiyatland&#305;rmad&#305;r. Kesin fiyat i&#231;in resmi teklif haz&#305;rlanmal&#305;d&#305;r. &#304;ndirim karar&#305; sat&#305;&#351; y&#246;neticisine aittir.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span class="icon icon-navy">&#128203;</span>
+      Assessment &#214;zeti
+    </div>
+    <div id="summaryContent"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <span class="icon icon-orange">&#128140;</span>
+      Eksik Bilgi Kontrol&#252;
+    </div>
+    <div id="gapAnalysis"></div>
+  </div>
+
+  <!-- Tabs for outputs -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon icon-green">&#128228;</span>
+      &#199;&#305;kt&#305;lar
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('tabSonraki', this)">Sonraki Ad&#305;mlar</button>
+      <button class="tab-btn" onclick="switchTab('tabEmail', this)">E-posta Tasla&#287;&#305;</button>
+      <button class="tab-btn" onclick="switchTab('tabFaq', this)">SSS Rehberi</button>
+    </div>
+
+    <div class="tab-content active" id="tabSonraki">
+      <div class="checkbox-grid" id="sonrakiAdimlar">
+        <div class="checkbox-item" data-value="Teklif Haz&#305;rl&#305;&#287;&#305;"><span class="check-box"></span><span>Teklif Haz&#305;rl&#305;&#287;&#305;</span></div>
+        <div class="checkbox-item" data-value="Teknik G&#246;r&#252;&#351;me"><span class="check-box"></span><span>Teknik G&#246;r&#252;&#351;me</span></div>
+        <div class="checkbox-item" data-value="PoC / Demo"><span class="check-box"></span><span>PoC / Demo</span></div>
+        <div class="checkbox-item" data-value="S&#246;zle&#351;me"><span class="check-box"></span><span>S&#246;zle&#351;me</span></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tabEmail">
+      <div id="emailDraftContent"></div>
+      <button class="btn btn-sm btn-navy" style="margin-top:12px" onclick="copyEmailDraft()">&#128203; Kopyala</button>
+    </div>
+
+    <div class="tab-content" id="tabFaq">
+      <div class="banner banner-blue" style="margin-bottom:12px">
+        <span class="banner-icon">&#128218;</span>
+        <div>M&#252;&#351;terilerin en s&#305;k sordu&#287;u teknik sorular. G&#246;r&#252;&#351;me s&#305;ras&#305;nda referans olarak kullanabilirsiniz.</div>
+      </div>
+      <div id="faqList"></div>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <button class="btn btn-outline" onclick="goStep(3)">&#8592; Geri</button>
+    <div class="btn-group">
+      <button class="btn btn-green" onclick="exportJSON()">&#128229; JSON</button>
+      <button class="btn btn-navy" onclick="exportPDF()">&#128424; PDF / Yazd&#305;r</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+</div>
+
+<script>
+// ===== STATE =====
+let currentStep = 1;
+const totalSteps = 4;
+
+// ===== INIT =====
+document.getElementById('tarih').valueAsDate = new Date();
+
+// Checkbox toggle
+document.querySelectorAll('.checkbox-grid .checkbox-item').forEach(item => {
+  item.addEventListener('click', () => {
+    item.classList.toggle('selected');
+    updateProfilInfo();
+  });
+});
+
+// Radio toggle
+document.querySelectorAll('.radio-grid').forEach(grid => {
+  grid.querySelectorAll('.radio-item').forEach(item => {
+    item.addEventListener('click', () => {
+      grid.querySelectorAll('.radio-item').forEach(r => r.classList.remove('selected'));
+      item.classList.add('selected');
+      // Show/hide mevcut saglayici
+      if (grid.dataset.name === 'mevcutDurum') {
+        const v = item.dataset.value;
+        document.getElementById('mevcutSaglayiciGroup').style.display =
+          v === 'Başka sağlayıcı' ? 'block' : 'none';
+      }
+    });
+  });
+});
+
+// Progress step click
+document.querySelectorAll('.progress-step').forEach(s => {
+  s.addEventListener('click', () => goStep(parseInt(s.dataset.step)));
+});
+
+// ===== NAVIGATION =====
+function goStep(n) {
+  if (n < 1 || n > totalSteps) return;
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('step' + n).classList.add('active');
+  document.querySelectorAll('.progress-step').forEach(s => {
+    const sn = parseInt(s.dataset.step);
+    s.classList.remove('active', 'completed');
+    if (sn === n) s.classList.add('active');
+    else if (sn < n) s.classList.add('completed');
+  });
+  currentStep = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (n === 4) buildStep4();
+}
+
+// ===== ARCHITECTURE =====
+function toggleArch(card) {
+  card.classList.toggle('selected');
+  const hsmCard = document.querySelector('.arch-card[data-value="Server Side (HSM)"]');
+  document.getElementById('hsmDetail').classList.toggle('visible', hsmCard && hsmCard.classList.contains('selected'));
+}
+
+// ===== SIGNATURE PROFILES =====
+function toggleProfile(card) {
+  card.classList.toggle('selected');
+  updateProfilInfo();
+}
+
+function updateProfilInfo() {
+  const count = document.querySelectorAll('#imzaProfilleri .profile-card.selected').length;
+  const info = document.getElementById('profilSayisiInfo');
+  const text = document.getElementById('profilSayisiText');
+  if (count > 0) {
+    info.style.display = 'flex';
+    const map = {
+      1: { pkg: 'API BASIC', price: '3.500 €' },
+      2: { pkg: 'API PRO', price: '6.500 €' },
+      3: { pkg: 'API ENTERPRISE', price: '9.500 €' }
+    };
+    const r = map[count];
+    text.innerHTML = `<strong>${count} profil se\u00e7ildi \u2192 \u00d6nerilen paket: ${r.pkg} (${r.price}/y\u0131l)</strong>`;
+  } else {
+    info.style.display = 'none';
+  }
+}
+
+// ===== HELPERS =====
+function getSelected(id) {
+  return Array.from(document.querySelectorAll(`#${id} .checkbox-item.selected, #${id} .profile-card.selected, #${id} .arch-card.selected`))
+    .map(e => e.dataset.value);
+}
+
+function getRadio(name) {
+  const sel = document.querySelector(`.radio-grid[data-name="${name}"] .radio-item.selected`);
+  return sel ? sel.dataset.value : '';
+}
+
+function val(id) {
+  const el = document.getElementById(id);
+  return el ? (el.value || '') : '';
+}
+
+// ===== TAB SWITCHING =====
+function switchTab(tabId, btn) {
+  btn.closest('.card').querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  btn.closest('.card').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ===== FAQ =====
+const faqs = [
+  ["API entegrasyonu ne kadar s\u00fcrer?", "Temel entegrasyon 3-5 i\u015f g\u00fcn\u00fc. Karma\u015f\u0131kl\u0131\u011fa g\u00f6re 2-4 haftaya uzayabilir."],
+  ["Hangi programlama dillerini destekliyorsunuz?", "Java, C#, Python, PHP, Node.js i\u00e7in SDK mevcut. REST API t\u00fcm dillerde kullan\u0131labilir."],
+  ["Test ortam\u0131 var m\u0131?", "Evet, sandbox/test ortam\u0131 \u00fccretsiz sa\u011flanmaktad\u0131r."],
+  ["SLA garantisi nedir?", "%99.9 uptime garantisi. Detaylar SLA s\u00f6zle\u015fmesinde belirtilir."],
+  ["Toplu (batch) imzalama yap\u0131labilir mi?", "Evet, Server Side entegrasyonla toplu imzalama desteklenir."],
+  ["Mobil cihazlardan imza at\u0131labilir mi?", "Evet, mobil SDK ile veya mobil imza altyap\u0131s\u0131yla entegrasyon m\u00fcmk\u00fcnd\u00fcr."],
+  ["Zaman damgas\u0131 ayr\u0131 m\u0131 al\u0131n\u0131r?", "Evet, ayr\u0131 hizmet olarak sunulur. \u0130mza ile birlikte de kullan\u0131labilir."],
+  ["HSM gerekli mi?", "Server side y\u00fcksek hacimli i\u015flemlerde \u00f6nerilir. Client side i\u00e7in gerekmez."],
+  ["Sertifika yenileme nas\u0131l olur?", "API \u00fczerinden otomatik yenileme desteklenir. S\u00fcresi dolmadan bildirim g\u00f6nderilir."],
+  ["KVKK / eIDAS uyumu nas\u0131l sa\u011flan\u0131r?", "E-Tu\u011fra NES sertifikalar\u0131 eIDAS ve 5070 uyumludur. KVKK i\u00e7in veri i\u015fleme s\u00f6zle\u015fmesi yap\u0131l\u0131r."],
+  ["Entegrasyon s\u0131ras\u0131nda teknik destek var m\u0131?", "Evet, \u00f6zel teknik destek ekibi atan\u0131r. Dok\u00fcmantasyon ve \u00f6rnek kodlar sa\u011flan\u0131r."],
+  ["Rakiplerinize g\u00f6re avantaj\u0131n\u0131z ne?", "Fiyat avantaj\u0131 belirgin: BASIC 3.500\u20ac'dan ba\u015fl\u0131yor. Yerel destek, T\u00dcB\u0130TAK onayl\u0131, eIDAS uyumlu."]
+];
+
+const faqList = document.getElementById('faqList');
+faqs.forEach((f, i) => {
+  faqList.innerHTML += `
+    <div class="faq-item" onclick="this.classList.toggle('open')">
+      <div class="faq-q"><span>${i+1}. ${f[0]}</span><span class="arrow">\u25BC</span></div>
+      <div class="faq-a"><p>${f[1]}</p></div>
+    </div>`;
+});
+
+// ===== BUILD STEP 4 =====
+function buildStep4() {
+  buildPackageRecommendation();
+  buildPriceSummary();
+  buildSummary();
+  buildGapAnalysis();
+  buildEmailDraft();
+}
+
+// ===== PACKAGE RECOMMENDATION =====
+function buildPackageRecommendation() {
+  const profileCount = getSelected('imzaProfilleri').length;
+  const profiles = getSelected('imzaProfilleri');
+  const archSel = getSelected('archDiagram');
+  const hasHSM = archSel.includes('Server Side (HSM)');
+
+  const packages = [
+    {
+      name: 'API BASIC',
+      price: '3.500',
+      profiles: 1,
+      features: [
+        { text: '1 imza profili', has: true },
+        { text: '1 uygulama ba\u011flant\u0131s\u0131', has: true },
+        { text: '1 adam/g\u00fcn entegrasyon deste\u011fi', has: true },
+        { text: 'HSM deste\u011fi', has: false },
+        { text: '\u00c7oklu uygulama', has: false },
+      ]
+    },
+    {
+      name: 'API PRO',
+      price: '6.500',
+      profiles: 2,
+      features: [
+        { text: '2 imza profili', has: true },
+        { text: '1 uygulama ba\u011flant\u0131s\u0131', has: true },
+        { text: '2 adam/g\u00fcn entegrasyon deste\u011fi', has: true },
+        { text: 'HSM deste\u011fi', has: true },
+        { text: '\u00c7oklu uygulama (ek lisans)', has: true },
+      ]
+    },
+    {
+      name: 'API ENTERPRISE',
+      price: '9.500',
+      profiles: 3,
+      features: [
+        { text: '3 imza profili (t\u00fcm\u00fc)', has: true },
+        { text: '3 uygulama ba\u011flant\u0131s\u0131', has: true },
+        { text: '2 adam/g\u00fcn entegrasyon deste\u011fi', has: true },
+        { text: 'HSM deste\u011fi', has: true },
+        { text: '\u00c7oklu uygulama dahil', has: true },
+      ]
+    }
+  ];
+
+  let recommended = 0;
+  if (profileCount >= 3) recommended = 2;
+  else if (profileCount === 2) recommended = 1;
+  else if (hasHSM && profileCount <= 1) recommended = 1;
+  else recommended = 0;
+
+  let html = '<div class="pkg-grid">';
+  packages.forEach((pkg, i) => {
+    const isRec = i === recommended;
+    const isDim = profileCount > 0 && pkg.profiles < profileCount;
+    html += `
+      <div class="pkg-card ${isRec ? 'recommended' : ''} ${isDim ? 'dimmed' : ''}">
+        <div class="pkg-badge">\u00d6NER\u0130LEN</div>
+        <div class="pkg-head">
+          <div class="pkg-name">${pkg.name}</div>
+          <div class="pkg-price">${pkg.price} <span>\u20ac</span></div>
+          <div class="pkg-period">y\u0131ll\u0131k / KDV hari\u00e7</div>
+        </div>
+        <ul class="pkg-features">
+          ${pkg.features.map(f => `
+            <li>
+              <span class="feat-icon ${f.has ? 'feat-yes' : 'feat-no'}">${f.has ? '\u2713' : '\u2717'}</span>
+              <span>${f.text}</span>
+            </li>
+          `).join('')}
+        </ul>
+      </div>`;
+  });
+  html += '</div>';
+
+  if (profileCount > 0) {
+    const recPkg = packages[recommended];
+    html += `<div class="banner banner-green" style="margin-top:8px">
+      <span class="banner-icon">\u2705</span>
+      <div><strong>${profiles.join(' + ')} profilleri i\u00e7in \u00f6nerilen: ${recPkg.name} (${recPkg.price} \u20ac/y\u0131l)</strong>${hasHSM ? '<br>+ Cloud HSM NES hizmeti eklenmelidir.' : ''}</div>
+    </div>`;
+  } else {
+    html += `<div class="banner banner-orange"><span class="banner-icon">\u26a0\ufe0f</span><div>&#304;mza profili se\u00e7ilmedi. L\u00fctfen 2. ad\u0131mda imza profillerini i\u015faretleyin.</div></div>`;
+  }
+
+  document.getElementById('pkgRecommendation').innerHTML = html;
+}
+
+// ===== PRICE SUMMARY =====
+function buildPriceSummary() {
+  const profileCount = getSelected('imzaProfilleri').length;
+  const archSel = getSelected('archDiagram');
+  const hasHSM = archSel.includes('Server Side (HSM)');
+  const hsmKonum = getRadio('hsmKonum');
+  const kullanimSekli = getRadio('kullanimSekli');
+
+  let items = [];
+  let total = 0;
+
+  // API License
+  const pkgMap = { 1: { name: 'API BASIC', price: 3500, app: 1400 }, 2: { name: 'API PRO', price: 6500, app: 2600 }, 3: { name: 'API ENTERPRISE', price: 9500, app: 3800 } };
+  const pkg = pkgMap[Math.min(Math.max(profileCount, 1), 3)];
+
+  items.push({ name: `${pkg.name} Lisans\u0131`, price: pkg.price, currency: '\u20ac', note: 'Y\u0131ll\u0131k' });
+  total += pkg.price;
+
+  // App connection license
+  items.push({ name: 'Uygulama Ba\u011flant\u0131 Lisans\u0131', price: pkg.app, currency: '\u20ac', note: 'Her zaman dahil' });
+  total += pkg.app;
+
+  // Extra app license for SaaS
+  if (kullanimSekli === 'SaaS Uygulama' || kullanimSekli === 'Kurulum Bazl\u0131') {
+    items.push({ name: 'Ek Uygulama Lisans\u0131 (SaaS)', price: pkg.app, currency: '\u20ac', note: 'Her m\u00fc\u015fteri kurulumu i\u00e7in' });
+  }
+
+  // Cloud HSM
+  if (hasHSM && hsmKonum === 'E-Tu\u011fra (Cloud HSM)') {
+    const hsmFee = parseFloat(val('hsmBedeli')) || 2500;
+    items.push({ name: 'Cloud HSM Kullan\u0131m Bedeli', price: hsmFee, currency: '\u20ac', note: 'Y\u0131ll\u0131k' });
+    total += hsmFee;
+  }
+
+  // HSM NES Certificate
+  if (hasHSM) {
+    const nesFee = parseFloat(val('hsmNesSertifikaBedeli')) || 499;
+    items.push({ name: 'HSM NES Sertifikas\u0131', price: nesFee, currency: '\u20ac', note: '' });
+    total += nesFee;
+    items.push({ name: 'HSM NES Y\u00fckleme Bedeli', price: 499, currency: '\u20ac', note: 'Tek seferlik' });
+    total += 499;
+  }
+
+  let html = `<table class="price-table">
+    <thead><tr><th>Kalem</th><th>Fiyat</th><th>Not</th></tr></thead><tbody>`;
+
+  items.forEach(item => {
+    html += `<tr><td>${item.name}</td><td><strong>${item.price.toLocaleString('tr-TR')} ${item.currency}</strong></td><td style="color:var(--muted);font-size:12px">${item.note}</td></tr>`;
+  });
+
+  html += `<tr class="total-row"><td><strong>Tahmini Toplam</strong></td><td><strong>${total.toLocaleString('tr-TR')} \u20ac</strong></td><td style="font-size:12px">KDV hari\u00e7</td></tr>`;
+  html += '</tbody></table>';
+
+  document.getElementById('priceSummary').innerHTML = html;
+}
+
+// ===== SUMMARY =====
+function buildSummary() {
+  const sc = document.getElementById('summaryContent');
+  const archSel = getSelected('archDiagram');
+  const profiles = getSelected('imzaProfilleri');
+
+  sc.innerHTML = `
+    <div class="summary-block">
+      <h3>\ud83c\udfe2 M\u00fc\u015fteri Bilgileri</h3>
+      <div class="summary-row"><span class="s-label">Firma Ad\u0131</span><span class="s-value">${val('firmaAdi') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Sekt\u00f6r</span><span class="s-value">${val('sektor') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Yetkili</span><span class="s-value">${val('yetkili') || '-'} ${val('gorevi') ? '- ' + val('gorevi') : ''}</span></div>
+      <div class="summary-row"><span class="s-label">\u0130leti\u015fim</span><span class="s-value">${val('telefon') || '-'} / ${val('eposta') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Firma B\u00fcy\u00fckl\u00fc\u011f\u00fc</span><span class="s-value">${getRadio('firmaBuyukluk') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Mevcut Durum</span><span class="s-value">${getRadio('mevcutDurum') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Sat\u0131\u015f Temsilcisi</span><span class="s-value">${val('temsilci') || '-'} - ${val('tarih') || '-'}</span></div>
+    </div>
+
+    <div class="summary-block">
+      <h3>\ud83d\udcca \u0130htiya\u00e7 Analizi</h3>
+      <div class="summary-row"><span class="s-label">Dok\u00fcman T\u00fcrleri</span><span class="s-value"><div class="tags">${getSelected('dokumanTurleri').map(d => `<span class="tag tag-navy">${d}</span>`).join('') || '-'}</div></span></div>
+      <div class="summary-row"><span class="s-label">Hedef Sistemler</span><span class="s-value">${getSelected('hedefSistemler').join(', ') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Kullan\u0131m \u015eekli</span><span class="s-value">${getRadio('kullanimSekli') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">\u0130mza Profilleri</span><span class="s-value"><div class="tags">${profiles.map(p => `<span class="tag tag-orange">${p}</span>`).join('') || '-'}</div></span></div>
+      <div class="summary-row"><span class="s-label">\u0130mzalama Mimarisi</span><span class="s-value"><div class="tags">${archSel.map(a => `<span class="tag tag-green">${a}</span>`).join('') || '-'}</div></span></div>
+      ${archSel.includes('Server Side (HSM)') ? `<div class="summary-row"><span class="s-label">HSM Konumu</span><span class="s-value">${getRadio('hsmKonum') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">HSM Bedeli</span><span class="s-value">${val('hsmBedeli') ? val('hsmBedeli') + ' \u20ac/y\u0131l' : '-'}</span></div>
+      <div class="summary-row"><span class="s-label">HSM NES Sertifika Bedeli</span><span class="s-value">${val('hsmNesSertifikaBedeli') ? val('hsmNesSertifikaBedeli') + ' \u20ac' : '-'}</span></div>` : ''}
+      <div class="summary-row"><span class="s-label">G\u00fcnl\u00fck \u0130mza</span><span class="s-value">${val('gunlukAdet') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Ayl\u0131k Hacim</span><span class="s-value">${val('aylikHacim') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Zaman Damgas\u0131</span><span class="s-value">${getRadio('zamanDamgasi') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Reg\u00fclasyonlar</span><span class="s-value"><div class="tags">${getSelected('regulasyonlar').map(r => `<span class="tag tag-navy">${r}</span>`).join('') || '-'}</div></span></div>
+      <div class="summary-row"><span class="s-label">Zaman \u00c7izelgesi</span><span class="s-value">${getRadio('zamanCizelgesi') || '-'}</span></div>
+    </div>
+
+    <div class="summary-block">
+      <h3>\u2699\ufe0f Teknik Detaylar</h3>
+      <div class="summary-row"><span class="s-label">Prog. Dilleri</span><span class="s-value"><div class="tags">${getSelected('progDiller').map(p => `<span class="tag tag-navy">${p}</span>`).join('') || '-'}</div></span></div>
+      <div class="summary-row"><span class="s-label">Framework</span><span class="s-value">${val('framework') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">\u0130\u015fletim Sistemi</span><span class="s-value">${getSelected('isletimSistemi').join(', ') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Sunucu Ortam\u0131</span><span class="s-value">${getRadio('sunucuOrtam') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">ERP/CRM</span><span class="s-value">${val('erpSistem') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Uygulamalar</span><span class="s-value">${getSelected('entUygulamalar').join(', ') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Geli\u015ftirme Ekibi</span><span class="s-value">${getRadio('gelistirmeEkibi') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Sertifika Adedi</span><span class="s-value">${val('sertAdet') || '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Lisans S\u00fcresi</span><span class="s-value">${val('lisansSuresi') ? val('lisansSuresi') + ' Y\u0131l' : '-'}</span></div>
+      <div class="summary-row"><span class="s-label">Sertifika T\u00fcr\u00fc</span><span class="s-value">${getSelected('sertTuru').join(', ') || '-'}</span></div>
+    </div>
+
+    ${val('ekNotlar') ? `<div class="summary-block"><h3>\ud83d\udcdd Notlar</h3><p style="font-size:13px;line-height:1.6;color:#555;white-space:pre-wrap">${val('ekNotlar')}</p></div>` : ''}
+  `;
+}
+
+// ===== GAP ANALYSIS =====
+function buildGapAnalysis() {
+  const gaps = [];
+
+  if (!val('firmaAdi')) gaps.push({ q: 'Firma Ad\u0131', why: 'Teklif haz\u0131rlamak i\u00e7in zorunlu.' });
+  if (!val('yetkili')) gaps.push({ q: 'Yetkili Ki\u015fi', why: 'Teklif ve ileti\u015fim i\u00e7in gerekli.' });
+  if (!val('eposta')) gaps.push({ q: 'E-posta Adresi', why: 'Teklif g\u00f6nderimi i\u00e7in zorunlu.' });
+  if (getSelected('imzaProfilleri').length === 0) gaps.push({ q: '\u0130mza Profilleri', why: 'Paket \u00f6nerisi yap\u0131lamaz.' });
+  if (getSelected('archDiagram').length === 0) gaps.push({ q: '\u0130mzalama Mimarisi', why: 'HSM ve sertifika ihtiyac\u0131 belirlenemez.' });
+  if (getSelected('dokumanTurleri').length === 0) gaps.push({ q: 'Dok\u00fcman T\u00fcrleri', why: 'Kullan\u0131m senaryosu net de\u011fil.' });
+  if (!getRadio('kullanimSekli')) gaps.push({ q: 'Uygulama Kullan\u0131m \u015eekli', why: 'SaaS ise ek lisans gerekebilir.' });
+  if (!val('gunlukAdet') && !val('aylikHacim')) gaps.push({ q: '\u0130mzalama Hacmi', why: 'Do\u011fru mimari \u00f6nerisi i\u00e7in \u00f6nemli.' });
+  if (!getRadio('zamanDamgasi')) gaps.push({ q: 'Zaman Damgas\u0131 \u0130htiyac\u0131', why: 'Ek \u00fcr\u00fcn ve fiyatland\u0131rmay\u0131 etkiler.' });
+  if (getSelected('progDiller').length === 0) gaps.push({ q: 'Programlama Dili', why: 'Entegrasyon dok\u00fcman\u0131 se\u00e7imi i\u00e7in gerekli.' });
+  if (!getRadio('gelistirmeEkibi')) gaps.push({ q: 'Geli\u015ftirme Ekibi Durumu', why: 'Ek destek adam/g\u00fcn ihtiyac\u0131n\u0131 belirler.' });
+  if (!getRadio('zamanCizelgesi')) gaps.push({ q: 'Zaman \u00c7izelgesi', why: '\u00d6nceliklendirme ve planlama i\u00e7in gerekli.' });
+
+  const el = document.getElementById('gapAnalysis');
+
+  if (gaps.length === 0) {
+    el.innerHTML = '<div class="banner banner-green"><span class="banner-icon">\u2705</span><div><strong>T\u00fcm kritik bilgiler tamamland\u0131!</strong> Teklif haz\u0131rlamaya ge\u00e7ilebilir.</div></div>';
+    return;
+  }
+
+  let html = `<div class="banner banner-red"><span class="banner-icon">\u26a0\ufe0f</span><div><strong>${gaps.length} eksik bilgi tespit edildi.</strong> Teklif \u00f6ncesi m\u00fc\u015fteriden teyit al\u0131nmal\u0131.</div></div>`;
+  html += '<div style="margin-top:10px">';
+  gaps.forEach(g => {
+    html += `<div class="summary-row"><span class="s-label" style="color:var(--red)">\u2022 ${g.q}</span><span class="s-value" style="font-size:12px;color:var(--muted)">${g.why}</span></div>`;
+  });
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+// ===== EMAIL DRAFT =====
+function buildEmailDraft() {
+  const firma = val('firmaAdi') || '[Firma Ad\u0131]';
+  const kisi = val('yetkili') || '[Yetkili Ki\u015fi]';
+  const profiles = getSelected('imzaProfilleri');
+  const profileCount = profiles.length;
+  const pkgNames = { 1: 'API BASIC', 2: 'API PRO', 3: 'API ENTERPRISE' };
+  const pkg = pkgNames[Math.min(Math.max(profileCount, 1), 3)];
+  const archSel = getSelected('archDiagram');
+  const hasHSM = archSel.includes('Server Side (HSM)');
+  const zamanDamgasi = getRadio('zamanDamgasi');
+
+  const emailText = `Konu: E-Tu\u011fra API SDK - ${firma} \u0130\u00e7in \u00d6zel Teklif
+
+Say\u0131n ${kisi},
+
+G\u00f6r\u00fc\u015fmemizde de\u011ferlendirdi\u011fimiz e-imza entegrasyon ihtiya\u00e7lar\u0131n\u0131za y\u00f6nelik teklifimizi ekte bilgilerinize sunar\u0131z.
+
+Firman\u0131z\u0131n ihtiya\u00e7lar\u0131 do\u011frultusunda ${profiles.length > 0 ? profiles.join(' + ') + ' imza profil' + (profiles.length > 1 ? 'leri' : 'i') : 'belirlenen imza profilleri'} kapsam\u0131nda ${pkg} paketi \u00f6nerilmektedir.${hasHSM ? ' Server-side imzalama i\u00e7in Cloud HSM NES hizmeti de teklife dahil edilmi\u015ftir.' : ''}${zamanDamgasi === 'Evet' ? ' Ayr\u0131ca zaman damgas\u0131 hizmeti i\u00e7in de ayr\u0131 bir teklif ekte yer almaktad\u0131r.' : ''}
+
+Teklif detaylar\u0131n\u0131 ekte inceleyebilirsiniz. Teklifimiz 15 g\u00fcn ge\u00e7erlidir.
+
+Sonraki ad\u0131m olarak, teknik ekibinizle birlikte bir demo/PoC g\u00f6r\u00fc\u015fmesi planlayabiliriz. Uygun oldu\u011funuz tarihleri payla\u015f\u0131rsan\u0131z memnun oluruz.
+
+Sorular\u0131n\u0131z i\u00e7in l\u00fctfen bize ula\u015fmaktan \u00e7ekinmeyin.
+
+Sayg\u0131lar\u0131mla,
+[Sat\u0131\u015f Temsilcisi Ad\u0131]
+E-Tu\u011fra EBG Bili\u015fim Teknolojileri`;
+
+  const el = document.getElementById('emailDraftContent');
+  el.innerHTML = `<div class="email-draft" id="emailDraftText"><div class="email-header">Kime: ${val('eposta') || '[m\u00fc\u015fteri@firma.com]'}<br>Konu: E-Tu\u011fra API SDK - ${firma} \u0130\u00e7in \u00d6zel Teklif</div>${emailText.split('\n').slice(2).join('\n')}</div>`;
+}
+
+function copyEmailDraft() {
+  const text = document.getElementById('emailDraftText').innerText;
+  navigator.clipboard.writeText(text).then(() => showToast('E-posta tasla\u011f\u0131 kopyaland\u0131!'));
+}
+
+// ===== EXPORTS =====
+function exportPDF() { window.print(); }
+
+function exportJSON() {
+  const data = buildJSONData();
+  if (!data.musteriGenel.firmaAdi) {
+    alert('L\u00fctfen en az\u0131ndan Firma Ad\u0131 alan\u0131n\u0131 doldurun.');
+    goStep(1);
+    return;
+  }
+
+  const slug = data.musteriGenel.firmaAdi
+    .toLowerCase()
+    .replace(/[\u0131\u0130]/g,'i').replace(/[\u00fc\u00dc]/g,'u').replace(/[\u00f6\u00d6]/g,'o')
+    .replace(/[\u015f\u015e]/g,'s').replace(/[\u00e7\u00c7]/g,'c').replace(/[\u011f\u011e]/g,'g')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+
+  const filename = `assessment_${slug}_${new Date().toISOString().slice(0,10)}.json`;
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`\u2713 ${filename} indirildi!`);
+}
+
+function buildJSONData() {
+  const archSel = getSelected('archDiagram');
+  const profiles = getSelected('imzaProfilleri');
+  const profileCount = profiles.length;
+  const pkgNames = { 0: 'Belirsiz', 1: 'API BASIC', 2: 'API PRO', 3: 'API ENTERPRISE' };
+
+  return {
+    _meta: {
+      formType: "etugra-api-assessment",
+      version: "2.0",
+      olusturmaTarihi: new Date().toISOString(),
+      olusturmaTarihiTR: new Date().toLocaleDateString('tr-TR') + ' ' + new Date().toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' })
+    },
+    musteriGenel: {
+      firmaAdi: val('firmaAdi'),
+      sektor: val('sektor'),
+      yetkiliKisi: val('yetkili'),
+      gorevi: val('gorevi'),
+      telefon: val('telefon'),
+      eposta: val('eposta'),
+      webSitesi: val('website'),
+      firmaBuyuklugu: getRadio('firmaBuyukluk'),
+      mevcutDurum: getRadio('mevcutDurum'),
+      mevcutSaglayici: val('mevcutSaglayici') || null
+    },
+    satisTemsilcisi: { ad: val('temsilci'), tarih: val('tarih') },
+    ihtiyacAnalizi: {
+      dokumanTurleri: getSelected('dokumanTurleri'),
+      dokumanDiger: val('dokumanDiger') || null,
+      hedefSistemler: getSelected('hedefSistemler'),
+      kullanimSekli: getRadio('kullanimSekli'),
+      imzaProfilleri: profiles,
+      imzaProfilSayisi: profileCount,
+      onerilenPaket: pkgNames[Math.min(profileCount, 3)],
+      imzalamaMimarisi: archSel,
+      clientSide: archSel.includes('Client Side'),
+      serverSideOnPrem: archSel.includes('Server Side (On-Prem)'),
+      serverSideHSM: archSel.includes('Server Side (HSM)'),
+      hsmDetay: archSel.includes('Server Side (HSM)') ? {
+        hsmKonumu: getRadio('hsmKonum'),
+        cloudHSM: getRadio('hsmKonum') === 'E-Tu\u011fra (Cloud HSM)',
+        hsmBedeli: val('hsmBedeli') ? parseFloat(val('hsmBedeli')) : null,
+        hsmNesSertifikaBedeli: val('hsmNesSertifikaBedeli') ? parseFloat(val('hsmNesSertifikaBedeli')) : null
+      } : null,
+      gunlukImzalama: val('gunlukAdet') ? parseInt(val('gunlukAdet')) : null,
+      aylikHacim: val('aylikHacim') ? parseInt(val('aylikHacim')) : null,
+      zamanDamgasi: getRadio('zamanDamgasi'),
+      regulasyonlar: getSelected('regulasyonlar'),
+      zamanCizelgesi: getRadio('zamanCizelgesi')
+    },
+    teknikDetaylar: {
+      programlamaDilleri: getSelected('progDiller'),
+      framework: val('framework') || null,
+      isletimSistemi: getSelected('isletimSistemi'),
+      sunucuOrtami: getRadio('sunucuOrtam'),
+      erpCrmDms: val('erpSistem') || null,
+      veritabani: val('veritabani') || null,
+      entegrasyonUygulamalari: getSelected('entUygulamalar'),
+      gelistirmeEkibi: getRadio('gelistirmeEkibi'),
+      teknikIletisim: {
+        kisi: val('teknikKisi') || null,
+        email: val('teknikEmail') || null
+      },
+      sertifikaAdedi: val('sertAdet') ? parseInt(val('sertAdet')) : null,
+      lisansSuresiYil: val('lisansSuresi') ? parseInt(val('lisansSuresi')) : null,
+      sertifikaTuru: getSelected('sertTuru')
+    },
+    sonrakiAdimlar: getSelected('sonrakiAdimlar'),
+    notlar: val('ekNotlar') || null
+  };
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+</script>
+</body>
+</html>
